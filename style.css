@@ -1,38 +1,36 @@
-/* 画面全体・スクロール無効化 ----------------------------- */ 
+/* 全体レイアウト & スクロール抑止 ----------------------- */
 html,body{height:100%;overflow:hidden;touch-action:none;}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;}
 
-/* キャンバス ─ 内部解像度 768×768 を CSS だけでスケール  */
 body{
   display:flex;justify-content:center;align-items:center;
   background:#1eaf5d;
 }
+
+/* キャンバス：内部解像度 768×768／表示は 90 vmin 以下 -------- */
 canvas{
   border:6px solid #333;
-  width: 100vmin;          /* 縦横の短いほうにピッタリ */
-  height:100vmin;
-  max-width:768px;         /* オリジナルより拡大しない */
+  width: 90vmin;
+  height:90vmin;
+  max-width:768px;
   max-height:768px;
 }
 
 /* ───────── バーチャルボタン ───────── */
-.touchPad{
-  position:fixed;inset:0;pointer-events:none;          /* 親は透過 */
-}
+.touchPad{position:fixed;inset:0;pointer-events:none;}
 .tBtn{
   position:absolute;pointer-events:auto;user-select:none;
-  border:none;border-radius:50%;width:64px;height:64px;
-  font-size:32px;font-weight:bold;line-height:64px;
-  background:#444;opacity:.65;color:#fff;
-  transition:.1s;
+  border:none;border-radius:50%;
+  width:80px;height:80px;line-height:80px;font-size:34px;font-weight:bold;
+  background:#444;opacity:.70;color:#fff;transition:.1s;
 }
 .tBtn:active{transform:scale(.9);opacity:1;background:#ffd400;color:#000;}
-/* 配置 */
-#btnLeft  {left:16px;bottom:110px;}
-#btnRight {left:108px;bottom:110px;}
-#btnGas   {right:16px;bottom:174px;}
-#btnBrake {right:16px;bottom:46px;}
-/* PC では非表示 */
+/* 配置（やや広げる） */
+#btnLeft  {left:18px;bottom:128px;}
+#btnRight {left:118px;bottom:128px;}
+#btnGas   {right:18px;bottom:200px;}
+#btnBrake {right:18px;bottom:80px;}
+/* マウス環境では非表示 */
 @media (pointer:fine){
   .touchPad{display:none;}
 }
