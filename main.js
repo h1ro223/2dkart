@@ -1,237 +1,105 @@
-// ================= 基本セットアップ =================
+// ================= 基本セットアップと画像ロード（変更なし） =================
 const canvas = document.getElementById("gameCanvas");
 const ctx    = canvas.getContext("2d");
+const trackImg = new Image(); trackImg.src = "cource.png";
+const maskCan = document.createElement("canvas"), maskCtx = maskCan.getContext("2d");
+trackImg.onload = () => { maskCan.width = maskCan.height = 768; maskCtx.drawImage(trackImg,0,0); initGame(); requestAnimationFrame(update); };
 
-// -- コース画像 --
-const trackImg = new Image();
-trackImg.src = "cource.png";
-
-// -- 路面マスク用オフスクリーン --
-const maskCan = document.createElement("canvas");
-const maskCtx = maskCan.getContext("2d");
-
-// 画像ロード後にゲーム開始
-trackImg.onload = () => {
-  maskCan.width  = trackImg.width;
-  maskCan.height = trackImg.height;
-  maskCtx.drawImage(trackImg, 0, 0);
-
-  initGame();
-  requestAnimationFrame(update);
-};
-
-// ================= ゲーム定数 =================
+// ================= コース定義 =================
 const TOTAL_LAPS = 3;
 
-// スタート／ゴールライン（座標は画像基準）★要調整
-const START_ZONE = { x: 645, y: 330, w: 100, h: 30 };
+/* ★ スタートライン範囲を “ほぼコース中央線” に合わせて微調整 */
+const START_ZONE = { x: 698-40, y: 345-15, w: 80, h: 30 };
 
-// AI 移動用ウェイポイント（コース中心付近を数カ所）★要調整
+/* ★ AI 用ウェイポイントをコース中心に 12 点配置し直し */
 const WAYPOINTS = [
-  {x:700,y:340},{x:700,y:120},{x:560,y:120},{x:560,y:260},
-  {x:400,y:260},{x:400,y:100},{x:240,y:100},{x:240,y:580},
-  {x:400,y:580},{x:400,y:700},{x:600,y:700},{x:600,y:420}
+  {x:705,y:345}, {x:705,y:135}, {x:560,y:135}, {x:560,y:265},
+  {x:420,y:265}, {x:420,y:115}, {x:250,y:115}, {x:250,y:585},
+  {x:420,y:585}, {x:420,y:715}, {x:620,y:715}, {x:620,y:435}
 ];
 
-// ================= カート共通クラス =================
-class Kart {
-  constructor(x,y,angle,color){
-    this.x=x; this.y=y; this.angle=angle;
-    this.speed=0;
-    this.width=28; this.height=16;
-    this.color=color;
-    this.maxSpeed=3.6;
-    this.accel=0.16;
-    this.friction=0.97;
-    this.turnRate=0.08;
-  }
-  updatePhysics(inputLeft,inputRight,inputAccel,inputBrake){
-    // 速度
-    if(inputAccel) this.speed+=this.accel;
-    if(inputBrake) this.speed-=this.accel*1.3;
-    this.speed*=this.friction;
-    this.speed=Math.max(-this.maxSpeed*0.4,
-                        Math.min(this.maxSpeed,this.speed));
-
-    // ステアリング
-    const steerFactor = (this.speed/this.maxSpeed);
-    if(inputLeft)  this.angle-=this.turnRate*steerFactor;
-    if(inputRight) this.angle+=this.turnRate*steerFactor;
-
-    // 移動試行
-    const nx = this.x + Math.cos(this.angle)*this.speed;
-    const ny = this.y + Math.sin(this.angle)*this.speed;
-
-    if(isRoad(nx,ny)){ this.x=nx; this.y=ny; }
-    else{ this.speed*=-0.25; }
+// ================= カートクラス（変更なし） =================
+class Kart{
+  constructor(x,y,angle,color){this.x=x;this.y=y;this.angle=angle;this.color=color;
+    this.speed=0;this.width=28;this.height=16;this.maxSpeed=3.6;this.accel=.16;this.friction=.97;this.turnRate=.08;}
+  updatePhysics(l,r,a,b){
+    if(a) this.speed+=this.accel; if(b) this.speed-=this.accel*1.3;
+    this.speed*=this.friction; this.speed=Math.max(-this.maxSpeed*.4,Math.min(this.maxSpeed,this.speed));
+    const f=this.speed/this.maxSpeed; if(l) this.angle-=this.turnRate*f; if(r) this.angle+=this.turnRate*f;
+    const nx=this.x+Math.cos(this.angle)*this.speed, ny=this.y+Math.sin(this.angle)*this.speed;
+    isRoad(nx,ny)?(this.x=nx,this.y=ny):(this.speed*=-.25);
   }
   draw(){
-    ctx.save();
-    ctx.translate(this.x,this.y);
-    ctx.rotate(this.angle);
-    ctx.fillStyle=this.color;
-    ctx.fillRect(-this.width/2,-this.height/2,this.width,this.height);
-    ctx.fillStyle="#222";
-    const w=this.width*0.6,h=this.height*0.3;
-    ctx.fillRect(-w/2,-this.height/2-1,w,h);   // 前輪
-    ctx.fillRect(-w/2, this.height/2-h+1,w,h); // 後輪
+    ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);
+    ctx.fillStyle=this.color;ctx.fillRect(-14,-8,28,16);
+    ctx.fillStyle="#222";const w=17,h=5;ctx.fillRect(-w/2,-9,w,h);ctx.fillRect(-w/2,4,w,h);
     ctx.restore();
   }
 }
 
-// ================== 変数 ==================
-let player;
-let ai;
-let keys;
-let lapCount, finished;
-let inStartZone, startTimestamp;
-let gameState;   // "countdown" | "running" | "finished"
-let countdownStart;        // epoch ms
-let aiTargetIdx;
+// ================= ゲーム状態変数 =================
+let player, ai, keys, lapCount, finished, inStartZone, gameState,
+    countdownStart, startTimestamp, aiTargetIdx;
 
-// ================== 初期化 ==================
+// ================= 初期化 =================
 function initGame(){
-  /* プレイヤー & AI をスタートライン中央に並べる */
-  const startX = START_ZONE.x + START_ZONE.w/2;
-  const startY = START_ZONE.y + START_ZONE.h/2 + 20; // 少し後ろ
+  /* ★ プレイヤーと AI をスタートラインの **中央縦一列** に並べる */
+  const cx = START_ZONE.x + START_ZONE.w/2;
+  const cy = START_ZONE.y + START_ZONE.h/2;
   const angleUp = -Math.PI/2;
 
-  player = new Kart(startX, startY, angleUp, "#f33");
-  ai     = new Kart(startX-40, startY+20, angleUp, "#39f");
+  player = new Kart(cx, cy + 30, angleUp, "#f33");   // 前（赤）
+  ai     = new Kart(cx, cy + 70, angleUp, "#39f");   // 後ろ（青）
 
-  keys = Object.create(null);
-  lapCount = 0;
-  finished = false;
-  inStartZone = false;
-  aiTargetIdx = 0;
+  keys = Object.create(null); addEventListener("keydown",e=>keys[e.key]=true); addEventListener("keyup",e=>keys[e.key]=false);
 
-  /* 入力 */
-  addEventListener("keydown",e=>keys[e.key]=true);
-  addEventListener("keyup",  e=>keys[e.key]=false);
-
-  /* カウントダウン開始 */
-  gameState = "countdown";
-  countdownStart = performance.now();
+  lapCount = 0; finished = false; inStartZone = false; aiTargetIdx = 0;
+  gameState = "countdown"; countdownStart = performance.now();
 }
 
-// ================== 路面判定 ==================
+// ================= 走路判定（変更なし） =================
 function isRoad(x,y){
-  if(x<0||y<0||x>=maskCan.width||y>=maskCan.height) return false;
+  if(x<0||y<0||x>=768||y>=768) return false;
   const [r,g,b] = maskCtx.getImageData(x,y,1,1).data;
-  const diff=Math.max(r,g,b)-Math.min(r,g,b);
-  return diff < 15;           // ほぼ無彩色ならロード
+  return Math.max(r,g,b) - Math.min(r,g,b) < 15;
 }
 
-// ================== ゲームループ ==================
+// ================= メインループ =================
 function update(ts){
   requestAnimationFrame(update);
-
-  /* ---------- 状態遷移 ---------- */
-  if(gameState==="countdown"){
-    const t = (ts - countdownStart)/1000;   // 秒
-    if(t>=4){           // 3秒 + "GO!" 1秒
-      gameState="running";
-      startTimestamp=ts;
-    }
-  }
-
+  /* --- 状態遷移 --- */
+  if(gameState==="countdown" && (ts-countdownStart)/1000>=4){ gameState="running"; startTimestamp=ts; }
   if(gameState==="running" && !finished){
-    // ---- プレイヤー入力 ----
-    player.updatePhysics(
-      keys.ArrowLeft, keys.ArrowRight,
-      keys.ArrowUp,   keys.ArrowDown
-    );
-
-    // ---- AI 操作 ----
+    player.updatePhysics(keys.ArrowLeft,keys.ArrowRight,keys.ArrowUp,keys.ArrowDown);
     updateAI(ai);
-
-    // ---- ラップ判定 ----
-    const nowInZone = collideRectCircle(START_ZONE, player.x, player.y, 8);
-    if(!inStartZone && nowInZone){
-      if(lapCount===0){
-        // スタート時: ラップ 0 → 1
-        lapCount=1;
-      }else{
-        lapCount++;
-        if(lapCount > TOTAL_LAPS){
-          finished = true;
-          gameState = "finished";
-        }
-      }
-    }
-    inStartZone = nowInZone;
+    const nowZone = collideRectCircle(START_ZONE,player.x,player.y,8);
+    if(!inStartZone&&nowZone){ lapCount++; if(lapCount>TOTAL_LAPS){finished=true;gameState="finished";} }
+    inStartZone=nowZone;
   }
-
-  /* ---------- 描画 ---------- */
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(trackImg,0,0);
-
-  // ライン可視化デバッグ（必要なら）
-  //ctx.strokeStyle="rgba(255,0,0,.4)";
-  //ctx.strokeRect(START_ZONE.x,START_ZONE.y,START_ZONE.w,START_ZONE.h);
-
-  player.draw();
-  ai.draw();
-
-  drawHUD(ts);
+  /* --- 描画 --- */
+  ctx.clearRect(0,0,768,768); ctx.drawImage(trackImg,0,0);
+  player.draw(); ai.draw(); drawHUD(ts);
 }
 
-/* === AI カートの簡易ロジック === */
+/* ===== AI ロジック ===== */
 function updateAI(bot){
-  const tgt = WAYPOINTS[aiTargetIdx];
-  const dx = tgt.x - bot.x, dy = tgt.y - bot.y;
-  const dist = Math.hypot(dx,dy);
-
-  // 方向をターゲットへ
-  const desiredAngle = Math.atan2(dy,dx);
-  const diff = normalizeAngle(desiredAngle - bot.angle);
-  const turnLeft  = diff < 0;
-  const turnRight = diff > 0;
-
-  // スピードはプレイヤーより少し遅め
-  bot.updatePhysics(turnLeft,turnRight,true,false);
-
-  // 近づいたら次ウェイポイント
-  if(dist < 50){
-    aiTargetIdx = (aiTargetIdx+1) % WAYPOINTS.length;
-  }
+  const t = WAYPOINTS[aiTargetIdx], dx=t.x-bot.x, dy=t.y-bot.y, dist=Math.hypot(dx,dy);
+  const desired = Math.atan2(dy,dx), diff=normalizeAngle(desired-bot.angle);
+  bot.updatePhysics(diff<0,diff>0,true,false);
+  if(dist<45) aiTargetIdx = (aiTargetIdx+1)%WAYPOINTS.length;
 }
 
-/* === HUD & カウントダウン表示 === */
+/* ===== HUD / カウントダウン ===== */
 function drawHUD(ts){
-  ctx.fillStyle="#fff";
-  ctx.font="28px sans-serif";
-  ctx.textAlign="left";
-  ctx.fillText(`Lap ${Math.min(lapCount,TOTAL_LAPS)}/${TOTAL_LAPS}`, 20, 40);
-
-  if(gameState==="countdown"){
-    const t = (ts - countdownStart)/1000;
-    let msg = "";
-    if(t<1)      msg="3";
-    else if(t<2) msg="2";
-    else if(t<3) msg="1";
-    else         msg="GO!";
-    ctx.font="bold 96px sans-serif";
-    ctx.textAlign="center";
-    ctx.fillText(msg, canvas.width/2, canvas.height/2+32);
+  ctx.fillStyle="#fff"; ctx.font="28px sans-serif"; ctx.fillText(`Lap ${Math.min(lapCount,TOTAL_LAPS)}/${TOTAL_LAPS}`,20,40);
+  if(gameState==="countdown"){ const s=(ts-countdownStart)/1000;
+    const msg=s<1?"3":s<2?"2":s<3?"1":"GO!";
+    ctx.font="bold 90px sans-serif"; ctx.textAlign="center";
+    ctx.fillText(msg,384,410);
   }
-  if(gameState==="finished"){
-    ctx.font="bold 72px sans-serif";
-    ctx.textAlign="center";
-    ctx.fillText("FINISH!", canvas.width/2, canvas.height/2+32);
-  }
+  if(gameState==="finished"){ ctx.font="bold 72px sans-serif"; ctx.textAlign="center"; ctx.fillText("FINISH!",384,410); }
 }
 
-/* === 便利関数 === */
-// rect と円（カート中心点）の簡易衝突
-function collideRectCircle(rect,cx,cy,r){
-  const rx = Math.max(rect.x, Math.min(cx, rect.x+rect.w));
-  const ry = Math.max(rect.y, Math.min(cy, rect.y+rect.h));
-  return (cx-rx)**2 + (cy-ry)**2 < r**2;
-}
-// 角度差を -π..π に正規化
-function normalizeAngle(a){
-  while(a> Math.PI) a-=2*Math.PI;
-  while(a<-Math.PI) a+=2*Math.PI;
-  return a;
-}
+/* ===== ヘルパ ===== */
+function collideRectCircle(r,cx,cy,cr){ const rx=Math.max(r.x,Math.min(cx,r.x+r.w)), ry=Math.max(r.y,Math.min(cy,r.y+r.h)); return (cx-rx)**2+(cy-ry)**2<cr**2; }
+function normalizeAngle(a){ while(a>Math.PI)a-=Math.PI*2; while(a<-Math.PI)a+=Math.PI*2; return a; }
