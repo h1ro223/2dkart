@@ -2,14 +2,22 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2D Mini-Kart Prototype</title>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Mini-Kart – Touch & Keyboard</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="gameCanvas" width="768" height="768"></canvas>
 
-  <!-- スクリプトは一番最後に -->
+  <!-- ── スマホ用バーチャルボタン ── -->
+  <div class="touchPad">
+    <button id="btnLeft"  class="touchBtn">◀</button>
+    <button id="btnRight" class="touchBtn">▶</button>
+    <button id="btnGas"   class="touchBtn gas">▲</button>
+    <button id="btnBrake" class="touchBtn brake">▼</button>
+  </div>
+
   <script src="main.js"></script>
 </body>
 </html>
