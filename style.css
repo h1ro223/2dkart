@@ -1,22 +1,26 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* 画面表示 ----------------------------------------------------------- */
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;}
+body{display:flex;justify-content:center;align-items:center;min-height:100vh;
+     background:#1eaf5d;touch-action:none;}  /* ←2本指スクロール抑止 */
 
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #1eaf5d;           /* 草むらっぽい背景 */
-  font-family: system-ui, sans-serif;
-}
-
-canvas {
-  border: 6px solid #333;
-  background: #1eaf5d;           /* コース外も同じ緑 */
-}
-
-body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1eaf5d;}
 canvas{border:6px solid #333;}
+
+/* バーチャルボタン --------------------------------------------------- */
+.touchPad{position:fixed;inset:0;pointer-events:none;}     /* 位置基準 */
+.touchBtn{
+  pointer-events:auto;  /* 子は操作可 */
+  position:absolute;border:none;border-radius:50%;
+  width:64px;height:64px;font-size:32px;font-weight:bold;
+  background:#444c;color:#fff5;backdrop-filter:blur(4px);
+  user-select:none;
+}
+.touchBtn:active{background:#fffd;color:#000;}
+/* 配置 */
+#btnLeft  {left:16px;bottom:96px;}
+#btnRight {left:96px;bottom:96px;}
+#btnGas   {right:16px;bottom:160px;}
+#btnBrake {right:16px;bottom:64px;}
+/* 大画面では隠す */
+@media (hover:hover){
+  .touchPad{display:none;}
+}
