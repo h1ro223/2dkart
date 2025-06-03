@@ -17,3 +17,6 @@ canvas {
   border: 6px solid #333;
   background: #1eaf5d;           /* コース外も同じ緑 */
 }
+
+body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1eaf5d;}
+canvas{border:6px solid #333;}
