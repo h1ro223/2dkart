@@ -1,0 +1,19 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #1eaf5d;           /* 草むらっぽい背景 */
+  font-family: system-ui, sans-serif;
+}
+
+canvas {
+  border: 6px solid #333;
+  background: #1eaf5d;           /* コース外も同じ緑 */
+}
