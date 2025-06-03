@@ -1,26 +1,38 @@
-/* 画面表示 ----------------------------------------------------------- */
+/* 画面全体・スクロール無効化 ----------------------------- */
+html,body{height:100%;overflow:hidden;touch-action:none;}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;}
-body{display:flex;justify-content:center;align-items:center;min-height:100vh;
-     background:#1eaf5d;touch-action:none;}  /* ←2本指スクロール抑止 */
 
-canvas{border:6px solid #333;}
-
-/* バーチャルボタン --------------------------------------------------- */
-.touchPad{position:fixed;inset:0;pointer-events:none;}     /* 位置基準 */
-.touchBtn{
-  pointer-events:auto;  /* 子は操作可 */
-  position:absolute;border:none;border-radius:50%;
-  width:64px;height:64px;font-size:32px;font-weight:bold;
-  background:#444c;color:#fff5;backdrop-filter:blur(4px);
-  user-select:none;
+/* キャンバス ─ 内部解像度 768×768 を CSS だけでスケール  */
+body{
+  display:flex;justify-content:center;align-items:center;
+  background:#1eaf5d;
 }
-.touchBtn:active{background:#fffd;color:#000;}
+canvas{
+  border:6px solid #333;
+  width: 100vmin;          /* 縦横の短いほうにピッタリ */
+  height:100vmin;
+  max-width:768px;         /* オリジナルより拡大しない */
+  max-height:768px;
+}
+
+/* ───────── バーチャルボタン ───────── */
+.touchPad{
+  position:fixed;inset:0;pointer-events:none;          /* 親は透過 */
+}
+.tBtn{
+  position:absolute;pointer-events:auto;user-select:none;
+  border:none;border-radius:50%;width:64px;height:64px;
+  font-size:32px;font-weight:bold;line-height:64px;
+  background:#444;opacity:.65;color:#fff;
+  transition:.1s;
+}
+.tBtn:active{transform:scale(.9);opacity:1;background:#ffd400;color:#000;}
 /* 配置 */
-#btnLeft  {left:16px;bottom:96px;}
-#btnRight {left:96px;bottom:96px;}
-#btnGas   {right:16px;bottom:160px;}
-#btnBrake {right:16px;bottom:64px;}
-/* 大画面では隠す */
-@media (hover:hover){
+#btnLeft  {left:16px;bottom:110px;}
+#btnRight {left:108px;bottom:110px;}
+#btnGas   {right:16px;bottom:174px;}
+#btnBrake {right:16px;bottom:46px;}
+/* PC では非表示 */
+@media (pointer:fine){
   .touchPad{display:none;}
 }
