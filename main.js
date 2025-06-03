@@ -1,4 +1,4 @@
-// ============== 基本セットアップ ==============
+// ============== 基本セットアップ ==============　
 const canvas = document.getElementById('gameCanvas');
 const ctx     = canvas.getContext('2d');
 
