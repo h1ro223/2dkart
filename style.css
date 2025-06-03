@@ -1,4 +1,4 @@
-/* 画面全体・スクロール無効化 ----------------------------- */
+/* 画面全体・スクロール無効化 ----------------------------- */ 
 html,body{height:100%;overflow:hidden;touch-action:none;}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;}
 
