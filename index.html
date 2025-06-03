@@ -3,20 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Mini-Kart – Touch & Keyboard</title>
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mini-Kart – Mobile Friendly</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- ゲーム画面 -->
   <canvas id="gameCanvas" width="768" height="768"></canvas>
 
-  <!-- ── スマホ用バーチャルボタン ── -->
+  <!-- ─┐ バーチャルコントローラ（スマホ用） -->
   <div class="touchPad">
-    <button id="btnLeft"  class="touchBtn">◀</button>
-    <button id="btnRight" class="touchBtn">▶</button>
-    <button id="btnGas"   class="touchBtn gas">▲</button>
-    <button id="btnBrake" class="touchBtn brake">▼</button>
-  </div>
+    <button id="btnLeft"  class="tBtn">◀</button>
+    <button id="btnRight" class="tBtn">▶</button>
+    <button id="btnGas"   class="tBtn gas">▲</button>
+    <button id="btnBrake" class="tBtn brake">▼</button>
+  </div><!-- ─┘ -->
 
   <script src="main.js"></script>
 </body>
