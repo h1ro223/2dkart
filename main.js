@@ -61,7 +61,7 @@ function initGame(){
 function isRoad(x,y){
   if(x<0||y<0||x>=768||y>=768) return false;
   const [r,g,b] = maskCtx.getImageData(x,y,1,1).data;
-  return Math.max(r,g,b) - Math.min(r,g,b) < 15;
+  return Math.max(r,g,b) - Math.min(r,g,b) < 55;
 }
 
 // ================= メインループ =================
